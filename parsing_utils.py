@@ -41,6 +41,7 @@ def infer_schema(filename, nrows=1000):
 
     # Determine decimal format based on str in original csv.
     decimal_fmt = {}
+    scale_fmt = {}
     for cc in float_dtypes:
         # Get max number of decimal for scale (number of digits to the right of the decimal point):
         scale = np.max([len(lst[1]) if len(lst)==2 else 0 for lst in df_str[cc].str.split('.')])
@@ -52,11 +53,14 @@ def infer_schema(filename, nrows=1000):
         precision = scale + left_dig + 1
 
         decimal_fmt[cc] = (precision, scale)
+        scale_fmt[cc] = scale
         # TODO: allow integers (scale=0)?
     
     col_dtypes = {}
     col_dtypes['numeric'] = numeric_schema
+    col_dtypes['scale'] = scale_fmt
     col_dtypes['decimal_fmt'] = decimal_fmt
+
     return(col_dtypes)
 
 
@@ -81,12 +85,42 @@ def apply_schema(df, col_dtypes, output_format):
                 dec_fmt = pa.decimal128(*col_dtypes['decimal_fmt'][cc])
                 fields.append(pa.field(cc, dec_fmt))
             else:
-                fields.append(df_pa.schema.field_by_name(cc))
+                fields.append(df_pa.schema.field(cc))
 
         updated_schema = pa.schema(fields)
 
         # Apply schema to arrow Table. Need to use pyarrow.parquet to write file out.
         df = df_pa.cast(updated_schema)
+
+        ## Performance testing shows that pandas 1.1.2 doesn't read pyarrow decimal format properly. 
+        # Takes over 100x longer to read in and consumes huge mem footprint.
+        # Spark and pyarrow reads format properly and quickly. Compromise is to use fp16/fp32/fp64 instead of decimal.
+        
     else:
         raise ValueError('Case not implemented. Choose output_format of csv, csv.gz, or parquet.')
     return(df)
+
+
+def gen_random_vec(size=1, scale=1.0, random_state=0, distribution=None):
+    """
+    Generate random, normally distributed vector with random_state and scaling centered about 0.
+
+    size: int
+        Output shape. 
+    
+    scale: float
+        Width of the normal distribution (standard deviation).
+
+    random_state: int
+        Seed value for random state.
+    """
+    R = np.random.RandomState(random_state)
+
+    if distribution == None:
+        out = scale*(R.randn(size) - 0.5)
+    elif distribution == 'normal':
+        out = R.normal(loc=0, scale=scale, size=size)
+    else:
+        raise ValueError('Distribution not handled.')
+
+    return(out)
