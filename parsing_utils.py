@@ -64,9 +64,12 @@ def infer_schema(filename, nrows=1000):
     return(col_dtypes)
 
 
-def apply_schema(df, col_dtypes, output_format):
+def apply_schema(df, col_dtypes, output_format, overide_decimal=False):
     """
     Applies decimal schema to input dataframe.
+    
+    overide_decimal: boolean
+        Cast decimal to double.
     """
     if output_format in ['csv', 'csv.gz']:
         df = df.astype(col_dtypes['numeric'])
@@ -82,7 +85,11 @@ def apply_schema(df, col_dtypes, output_format):
         fields = []
         for cc in df_pa.column_names:
             if cc in col_dtypes['decimal_fmt'].keys():
-                dec_fmt = pa.decimal128(*col_dtypes['decimal_fmt'][cc])
+                if overide_decimal == True:
+                    dec_fmt = pa.decimal128(*col_dtypes['decimal_fmt'][cc])
+                else:
+                    dec_fmt = pa.float64()
+                    
                 fields.append(pa.field(cc, dec_fmt))
             else:
                 fields.append(df_pa.schema.field(cc))

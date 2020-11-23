@@ -1,3 +1,4 @@
-pandas
-sweetviz
-imblearn
+# Create a new conda virtual environment and install the following packages.
+
+conda install -c conda-forge jupyterlab nodejs pyarrow pyspark ipykernel dask holoviews geoviews datashader geopandas seaborn shap scikit-learn umap-learn imbalanced-learn lightgbm xgboost boruta_py
+pip install sweetviz

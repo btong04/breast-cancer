@@ -25,11 +25,11 @@ import parsing_utils as psu
 ###########################
 ## Change these settings ##
 ###########################
-output_dir = r'c:\data\telco_dat'
-output_fmt = 'csv' # Choose ['csv', 'csv.gz', or 'parquet']
+output_fmt = 'parquet' # Choose ['csv', 'csv.gz', or 'parquet']
+output_dir = r'c:/data/telco_dat/'+output_fmt
 
-tot_iters = 10 # Total number of output files
-num_reps = 100 # Number of copies to replicate
+tot_iters = 1 # Total number of output files
+num_reps = 1000 # Number of copies to replicate
 distrib = 'normal' # Set distribution type for randomization. Select 'normal' or None.
 
 use_dask = True
